@@ -82,4 +82,8 @@ public class TransactionService {
 
     }
 
+    public List<Transaction> getCustomerTransactions(String customerId){
+        return repository.findByCustomerId(customerId);
+    }
+
 }

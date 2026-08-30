@@ -6,6 +6,7 @@ import com.example.transactionstarter.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -30,6 +31,12 @@ public class TransactionController {
     public Transaction updateStatus(@PathVariable String id, @RequestBody StatusUpdateRequest request){
         return service.updateStatus(id,request.getStatus());
     }
+
+    @GetMapping("/customer/{customerId}")
+    public List<Transaction> getCustomerTransactions(@PathVariable String customerId){
+        return service.getCustomerTransactions(customerId);
+    }
+
 
     
 }
