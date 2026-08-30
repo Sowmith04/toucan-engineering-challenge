@@ -46,7 +46,7 @@ public class Transaction {
         return transactionId;
     }
 
-    public void setCustomerid(String customerId){
+    public void setCustomerId(String customerId){
         this.customerId=customerId;
     }
 
