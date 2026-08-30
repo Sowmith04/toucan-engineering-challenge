@@ -96,4 +96,24 @@ public class TransactionServiceTest {
 
         assertEquals(TransactionStatus.COMPLETED, updated.getTransactionStatus());
     }
+
+    @Test
+    void completedTransactionCannotBeUpdated() {
+        Transaction transaction = new Transaction();
+
+        transaction.setTransactionId("TXN105");
+        transaction.setCustomerId("CUST105");
+        transaction.setAmount(500.0);
+        transaction.setCurrency("INR");
+        transaction.setTransactionType(TransactionType.DEPOSIT);
+
+        service.createTransaction(transaction);
+
+        service.updateStatus("TXN105", TransactionStatus.COMPLETED);
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> service.updateStatus("TXN105", TransactionStatus.FAILED)
+        );
+    }
 }

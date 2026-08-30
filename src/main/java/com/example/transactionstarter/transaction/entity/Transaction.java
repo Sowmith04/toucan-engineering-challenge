@@ -28,6 +28,7 @@ public class Transaction {
     @NotBlank
     private String currency;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 

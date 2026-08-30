@@ -62,6 +62,10 @@ public class TransactionService {
 
     public Transaction updateStatus(String transactionId, TransactionStatus newStatus){
 
+        if (newStatus == null) {
+        throw new IllegalArgumentException("Transaction status is required");
+    }
+
         Transaction transaction=repository.findById(transactionId)
             .orElseThrow(()->
                 new TransactionNotFoundException("Transaction Not Found!"));
