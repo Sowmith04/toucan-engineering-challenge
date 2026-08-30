@@ -36,7 +36,5 @@ public class TransactionController {
     public List<Transaction> getCustomerTransactions(@PathVariable String customerId){
         return service.getCustomerTransactions(customerId);
     }
-
-
-    
+   
 }
