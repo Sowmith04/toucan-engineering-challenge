@@ -60,4 +60,26 @@ public class TransactionService {
                 new TransactionNotFoundException("Transaction Not Found!"));
     }
 
+    public Transaction updateStatus(String transactionId, TransactionStatus newStatus){
+
+        Transaction transaction=repository.findById(transactionId)
+            .orElseThrow(()->
+                new TransactionNotFoundException("Transaction Not Found!"));
+
+        TransactionStatus currentStatus=transaction.getTransactionStatus();
+
+        if(currentStatus!=TransactionStatus.PENDING){
+            throw new IllegalArgumentException("Status cannot be changed");
+        }
+
+        if(newStatus==TransactionStatus.PENDING){
+            throw new IllegalArgumentException("Invalid Status Transition");
+        }
+
+        transaction.setTransactionStatus(newStatus);
+
+        return repository.save(transaction);
+
+    }
+
 }
