@@ -1,5 +1,6 @@
 package com.example.transactionstarter.transaction.service;
 
+import com.example.transactionstarter.transaction.exception.TransactionNotFoundException;
 import com.example.transactionstarter.transaction.entity.Transaction;
 import com.example.transactionstarter.transaction.enums.TransactionStatus;
 import com.example.transactionstarter.transaction.repository.TransactionRepository;
@@ -18,7 +19,11 @@ public class TransactionService {
     public Transaction createTransaction(Transaction transaction){
 
         if(transaction.getTransactionId()==null || transaction.getTransactionId().isBlank()){
-            throw new IllegalArgumentException("Transaction Id is required");
+            throw new IllegalArgumentException("Transaction ID is required");
+        }
+
+        if (repository.existsById(transaction.getTransactionId())) {
+            throw new IllegalArgumentException( "Transaction ID already exists");
         }
 
         if (transaction.getCustomerId() == null || transaction.getCustomerId().isBlank()) {
@@ -46,6 +51,13 @@ public class TransactionService {
         transaction.setTransactionStatus(TransactionStatus.PENDING);
 
         return repository.save(transaction);
+    }
+
+    public Transaction getTransaction(String transactionId){
+
+        return repository.findById(transactionId)
+           .orElseThrow(()->
+                new TransactionNotFoundException("Transaction Not Found!"));
     }
 
 }

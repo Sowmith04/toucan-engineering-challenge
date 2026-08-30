@@ -20,5 +20,10 @@ public class TransactionController {
         return service.createTransaction(transaction);
     }
 
+    @GetMapping("/{id}")
+    public Transaction getTransaction(@PathVariable String id){
+        return service.getTransaction(id);
+    }
+
     
 }
