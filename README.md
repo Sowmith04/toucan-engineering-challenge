@@ -1,109 +1,152 @@
-# Transaction Starter Project
+# Transaction Processing Service
 
-This is the starter project for the Customer Transactions exercise.
+## 1. Problem Understanding
 
-## Before you start
+This project implements a small transaction-processing REST service using Java and Spring Boot.
+The service manages customer transactions and provides four operations:
 
-The first thing you should do after cloning the repository is:
+- Create a transaction
+- Retrieve a transaction by Transaction ID
+- Update the status of a transaction
+- Retrieve all transactions for a Customer ID
 
-### Linux / macOS
+The application uses Spring Data JPA with an H2 in-memory database for persistence.
 
-```bash
-./mvnw clean test
-```
+---
 
-### Windows
+## 2. Assumptions
 
-```bat
-mvnw.cmd clean test
-```
+The following assumptions were made while implementing the service:
 
-The sample test should pass before you begin implementing the exercise.
+- Every transaction must have a unique Transaction ID.
+- Every transaction must have a Customer ID.
+- The transaction amount must be greater than zero.
+- Only INR, USD, and EUR are accepted as currencies.
+- Transaction Type is required and can be `DEPOSIT`, `WITHDRAW`, or `TRANSFER`.
+- A newly created transaction always starts with `PENDING` status.
+- Only transactions with `PENDING` status can have their status changed.
+- A `PENDING` transaction can be changed to `COMPLETED`, `FAILED`, or `CANCELLED`. But not to `PENDING` again.
+- Once a transaction reaches a final status, its status cannot be changed.
+- A request for a transaction that does not exist results in a not-found error.
 
-## What is already provided
+---
 
-- Java 17
-- Spring Boot
-- Maven wrapper
-- Spring Web
-- Spring Data JPA
-- H2 embedded database
-- JUnit / Spring Boot Test
-- A sample REST endpoint: `GET /api/sample`
-- A sample test that loads the Spring context
+## 3. Validation Rules
+
+Validation is handled at three levels:
+
+- Entity:Basic field validation is done using `@NotBlank`, `@NotNull`, and `@Positive`.
+- Controller: `@Valid` validates the request body before it reaches the service layer.
+- Service: Business rules are checked, such as duplicate Transaction ID, supported currencies (`INR`, `USD`, `EUR`), required transaction type, and valid status transitions.
+
+Validation errors return `400 Bad Request`, while a transaction that does not exist returns `404 Not Found`.
+
+New transactions are automatically assigned `PENDING` status.
+
+---
+
+## 4. API Endpoints
+
+### Create Transaction
+
+POST /api/transactions
+
+Creates and stores a new transaction.
+
+Example request {In JSON format}:
+{
+  "transactionId": "TXN100",
+  "customerId": "CUST100",
+  "amount": 1000.00,
+  "currency": "INR",
+  "transactionType": "DEPOSIT"
+}
+
+The transaction is created with PENDING status.
 
 
-## Exercise
+ ### Get Transaction
 
-Implement these four operations:
+ GET /api/transactions/{id}
 
-1. Create transaction
-2. Get transaction
-3. Update transaction status
-4. Get all transactions for a customer
-
-
-You may change the surrounding design if you believe your solution is better.
-
-## Transaction fields
-
-Every transaction contains:
-
-- Transaction ID
-- Customer ID
-- Amount
-- Currency
-- Transaction Type
-- Transaction Status
-
-### Validation rules
-
-Define what makes a transaction valid. At minimum, consider:
-
-- Transaction ID
-- Customer ID
-- Amount
-- Currency
-- Transaction type
-- Initial status
-
-Also explain any business validation you add beyond the annotations already supplied.
-
-## API skeleton
-
-### Create
-
-`TODO`
+Retrieves a transaction using its Transaction ID.
 
 Example:
 
-```
-TODO
-```
+GET /api/transactions/TXN100
 
-### Get
+Returns 404 Not Found if the transaction does not exist.
 
-`TODO`
 
-### Update status
+### Update Transaction Status
 
-`TODO`
+PUT /api/transactions/{id}/status
+
+Updates the status of an existing transaction.
+
+Example request:
+
+{
+  "status": "COMPLETED"
+}
+
+Only transactions currently in PENDING status can be updated.
+
+
+### Get Customer Transactions
+
+GET /api/transactions/customer/{customerId}
+
+Retrieves all transactions belonging to the specified Customer ID.
 
 Example:
 
-```
-TODO
-```
+GET /api/transactions/customer/CUST100
 
-### Get customer transactions
+---
 
-`TODO`
+## 5. Project Structure
 
-## Testing expectations
+The application is organized into separate layers:
 
-Add at least four meaningful tests.
+controller - Handles REST API requests.
+service - Contains business logic and validation.
+repository - Handles database operations using Spring Data JPA.
+entity - Defines the Transaction entity.
+dto - Contains request objects such as StatusUpdateRequest.
+enums - Contains transaction types and statuses.
+exception - Contains custom exceptions and global exception handling.
 
-Your tests should cover more than just application startup. 
+---
 
-You decide exactly which tests provide the best coverage.
+## 6. Testing
+
+Automated tests are implemented using JUnit and Spring Boot testing.
+
+The tests cover:
+
+- Successful transaction creation
+- Duplicate Transaction ID rejection
+- Invalid transaction rejection
+- Transaction-not-found handling
+- Successful transaction status update
+- Prevention of status updates after a transaction reaches a final state
+
+The project can be tested using:
+
+mvnw.cmd clean test (Windows) 
+./mvnw clean test (Linux/macOs)
+
+---
+
+## 7. Known Limitations
+
+- The application uses an H2 in-memory database, so transaction data is not persisted after the application stops.
+- Currency validation is limited to INR, USD, and EUR.
+
+---
+
+## 8. Improvements With More Time
+
+- Using a persistent database such as MySQL for production use.
 
