@@ -15,6 +15,7 @@ The AI was used to:
 - Understand appropriate HTTP status codes and their usage
 - Review and improve code structure
 - Understand error messages and identify issues in the code
+- Understanding the Git commands
 
 ## Significant AI Suggestions
 
