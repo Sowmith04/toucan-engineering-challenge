@@ -257,11 +257,6 @@ The test suite verifies:
 Given more time, the following enhancements could be implemented:
 
 - Replace H2 with MySQL or PostgreSQL
-- Add pagination for customer transaction retrieval
-- Add Swagger/OpenAPI documentation
-- Add audit logging
-- Add authentication and authorization
-- Add integration tests and code coverage reporting
 
 ---
 
