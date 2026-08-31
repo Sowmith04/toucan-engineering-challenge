@@ -1,59 +1,119 @@
 # Transaction Processing Service
 
-## 1. Problem Understanding
+A Spring Boot REST API for processing customer transactions. The service allows creating transactions, retrieving transaction details, updating transaction status, and fetching all transactions belonging to a customer.
 
-This project implements a small transaction-processing REST service using Java and Spring Boot.
-The service manages customer transactions and provides four operations:
+## Technology Stack
 
-- Create a transaction
-- Retrieve a transaction by Transaction ID
-- Update the status of a transaction
-- Retrieve all transactions for a Customer ID
-
-The application uses Spring Data JPA with an H2 in-memory database for persistence.
+- Java 17
+- Spring Boot 3.5.x
+- Spring Data JPA
+- H2 In-Memory Database
+- Maven
+- JUnit 5
 
 ---
 
-## 2. Assumptions
+## Features
 
-The following assumptions were made while implementing the service:
+The service provides the following functionality:
+
+1. Create a transaction
+2. Retrieve a transaction by Transaction ID
+3. Update the status of a transaction
+4. Retrieve all transactions for a Customer ID
+
+---
+
+## Assumptions
+
+The following assumptions were made during implementation:
 
 - Every transaction must have a unique Transaction ID.
 - Every transaction must have a Customer ID.
-- The transaction amount must be greater than zero.
-- Only INR, USD, and EUR are accepted as currencies.
-- Transaction Type is required and can be `DEPOSIT`, `WITHDRAW`, or `TRANSFER`.
-- A newly created transaction always starts with `PENDING` status.
-- Only transactions with `PENDING` status can have their status changed.
-- A `PENDING` transaction can be changed to `COMPLETED`, `FAILED`, or `CANCELLED`. But not to `PENDING` again.
-- Once a transaction reaches a final status, its status cannot be changed.
-- A request for a transaction that does not exist results in a not-found error.
+- Transaction amount must be greater than zero.
+- Supported currencies are:
+  - INR
+  - USD
+  - EUR
+- Transaction Type is mandatory and must be one of:
+  - DEPOSIT
+  - WITHDRAW
+  - TRANSFER
+- New transactions are always created with `PENDING` status.
+- Only transactions in `PENDING` status can be updated.
+- A `PENDING` transaction can transition to:
+  - COMPLETED
+  - FAILED
+  - CANCELLED
+- Once a transaction reaches a final status, it cannot be modified.
+- Requests for non-existent transactions return a `404 Not Found`.
 
 ---
 
-## 3. Validation Rules
+## Validation Rules
 
 Validation is handled at three levels:
 
-- Entity:Basic field validation is done using `@NotBlank`, `@NotNull`, and `@Positive`.
-- Controller: `@Valid` validates the request body before it reaches the service layer.
-- Service: Business rules are checked, such as duplicate Transaction ID, supported currencies (`INR`, `USD`, `EUR`), required transaction type, and valid status transitions.
+- Entity: Basic field validation is done using @NotBlank, @NotNull, and @Positive.
+- Controller: @Valid validates the request body before it reaches the service layer.
+- Service: Business rules are checked, such as duplicate Transaction ID, supported currencies (INR, USD, EUR), required transaction type, and valid status transitions.
 
-Validation errors return `400 Bad Request`, while a transaction that does not exist returns `404 Not Found`.
+The following validations are enforced:
 
-New transactions are automatically assigned `PENDING` status.
+- transactionId must not be null, empty, or blank.
+- customerId must not be null, empty, or blank.
+- amount must be greater than zero.
+- currency must be provided and must be one of the supported values: INR, USD, or EUR.
+- transactionType must be provided and must be a valid transaction type.
+- A transaction cannot be created if another transaction already exists with the same transactionId.
+- New transactions are automatically assigned PENDING status regardless of any status value provided by the client.
+- A transaction status can only be updated if the current status is PENDING.
+- Status updates to the same status (PENDING → PENDING) are not allowed.
+- Once a transaction reaches a final status (COMPLETED, FAILED, or CANCELLED), further status updates are rejected.
+- Requests for transactions that do not exist result in a 404 Not Found response.
+
+Validation failures and business-rule violations return 400 Bad Request, while requests for non-existent transactions return 404 Not Found.
+
+### Error Responses
+
+| Scenario | Response |
+|-----------|----------|
+| Invalid input | 400 Bad Request |
+| Invalid business rule | 400 Bad Request |
+| Transaction not found | 404 Not Found |
 
 ---
 
-## 4. API Endpoints
+## Status Transition Rules
+
+The following status transitions are allowed:
+
+| Current Status | Allowed Next Status |
+|---------------|----------------------|
+| PENDING | COMPLETED |
+| PENDING | FAILED |
+| PENDING | CANCELLED |
+
+The following transitions are not allowed:
+
+- PENDING → PENDING
+- COMPLETED → Any Status
+- FAILED → Any Status
+- CANCELLED → Any Status
+
+---
+
+## API Endpoints
 
 ### Create Transaction
 
-POST /api/transactions
+**POST** `/api/transactions`
 
-Creates and stores a new transaction.
+Creates a new transaction.
 
-Example request {In JSON format}:
+#### Example Request
+
+```json
 {
   "transactionId": "TXN100",
   "customerId": "CUST100",
@@ -61,92 +121,171 @@ Example request {In JSON format}:
   "currency": "INR",
   "transactionType": "DEPOSIT"
 }
+```
 
-The transaction is created with PENDING status.
+---
 
+### Get Transaction
 
- ### Get Transaction
+**GET** `/api/transactions/{id}`
 
- GET /api/transactions/{id}
+Retrieves a transaction by Transaction ID.
 
-Retrieves a transaction using its Transaction ID.
+#### Example
 
-Example:
-
+```http
 GET /api/transactions/TXN100
+```
 
-Returns 404 Not Found if the transaction does not exist.
-
+---
 
 ### Update Transaction Status
 
-PUT /api/transactions/{id}/status
+**PUT** `/api/transactions/{id}/status`
 
 Updates the status of an existing transaction.
 
-Example request:
+#### Example Request
 
+```json
 {
   "status": "COMPLETED"
 }
+```
 
-Only transactions currently in PENDING status can be updated.
-
+---
 
 ### Get Customer Transactions
 
-GET /api/transactions/customer/{customerId}
+**GET** `/api/transactions/customer/{customerId}`
 
-Retrieves all transactions belonging to the specified Customer ID.
+Retrieves all transactions for a customer.
 
-Example:
+#### Example
 
+```http
 GET /api/transactions/customer/CUST100
+```
 
 ---
 
-## 5. Project Structure
+## Project Structure
 
-The application is organized into separate layers:
+```
+src
+├── main
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── enums
+│   ├── exception
+│   ├── repository
+│   └── service
+│
+└── test
+    └── TransactionServiceTest
+```
 
-controller - Handles REST API requests.
-service - Contains business logic and validation.
-repository - Handles database operations using Spring Data JPA.
-entity - Defines the Transaction entity.
-dto - Contains request objects such as StatusUpdateRequest.
-enums - Contains transaction types and statuses.
-exception - Contains custom exceptions and global exception handling.
+### Layer Responsibilities
+
+| Layer | Responsibility |
+|---------|---------------|
+| Controller | Handles REST API requests |
+| Service | Business logic and validation |
+| Repository | Database access using Spring Data JPA |
+| Entity | Domain model |
+| DTO | Request/response objects |
+| Exception | Custom exceptions and global exception handling |
 
 ---
 
-## 6. Testing
+## Running the Application
 
-Automated tests are implemented using JUnit and Spring Boot testing.
+### Start the Application
 
-The tests cover:
+Windows:
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+Linux/macOS:
+
+```bash
+./mvnw spring-boot:run
+```
+
+---
+
+## Running Tests
+
+Windows:
+
+```bash
+mvnw.cmd clean test
+```
+
+Linux/macOS:
+
+```bash
+./mvnw clean test
+```
+
+### Test Coverage
+
+The test suite verifies:
 
 - Successful transaction creation
 - Duplicate Transaction ID rejection
 - Invalid transaction rejection
-- Transaction-not-found handling
-- Successful transaction status update
-- Prevention of status updates after a transaction reaches a final state
-
-The project can be tested using:
-
-mvnw.cmd clean test (Windows) 
-./mvnw clean test (Linux/macOs)
+- Transaction not found handling
+- Successful status update
+- Prevention of invalid status transitions
 
 ---
 
-## 7. Known Limitations
+## Known Limitations
 
-- The application uses an H2 in-memory database, so transaction data is not persisted after the application stops.
-- Currency validation is limited to INR, USD, and EUR.
+- Uses an H2 in-memory database.
+- Data is lost when the application stops.
+- Currency support is limited to INR, USD, and EUR.
 
 ---
 
-## 8. Improvements With More Time
+## Future Improvements
 
-- Using a persistent database such as MySQL for production use.
+Given more time, the following enhancements could be implemented:
 
+- Replace H2 with MySQL or PostgreSQL
+- Add pagination for customer transaction retrieval
+- Add Swagger/OpenAPI documentation
+- Add audit logging
+- Add authentication and authorization
+- Add integration tests and code coverage reporting
+
+---
+
+## Test Results
+
+The project was tested using:
+
+```bash
+mvnw.cmd clean test
+```
+
+Result:
+
+```
+Tests run: 6
+Failures: 0
+Errors: 0
+Skipped: 0
+
+BUILD SUCCESS
+```
+
+---
+
+## AI Usage Disclosure
+
+A separate `AI_USAGE_DISCLOSURE.md` file is included in this repository as required by the assessment instructions.
